@@ -12,40 +12,39 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
-const JWT_SECRET = process.env.JWT_SECRET || 'prompt-analyzer-secret-' + Date.now();
+const JWT_SECRET = process.env.JWT_SECRET || 'prompt-analyzer-secret-key';
 
+// Only exit in non-serverless environments
 if (!CLAUDE_API_KEY) {
   console.error('Missing CLAUDE_API_KEY environment variable');
-  process.exit(1);
 }
 
 if (!DATABASE_URL) {
   console.error('Missing DATABASE_URL environment variable');
-  process.exit(1);
 }
 
 // Neon PostgreSQL connection
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+let pool;
+if (DATABASE_URL) {
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
 
-// Create users table on startup
-async function initDB() {
-  await pool.query(`
+  // Create users table on startup
+  pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     )
-  `);
-  console.log('Database ready');
+  `).then(() => {
+    console.log('Database ready');
+  }).catch(err => {
+    console.error('Database init failed:', err.message);
+  });
 }
-initDB().catch(err => {
-  console.error('Database init failed:', err.message);
-  process.exit(1);
-});
 
 // Auth middleware
 function requireAuth(req, res, next) {
@@ -193,9 +192,12 @@ ${prompt}
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Prompt Analyzer running at http://localhost:${PORT}`);
-});
+// Only start server when running locally (not on Vercel)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Prompt Analyzer running at http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
