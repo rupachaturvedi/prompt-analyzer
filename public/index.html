@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Analyzer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 720px;
+      width: 100%;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #6c3cdc, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: #86868b;
+      font-size: 0.95rem;
+    }
+
+    /* Profile icon & dropdown */
+    .profile-wrapper {
+      position: relative;
+      display: none;
+    }
+
+    .profile-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6c3cdc, #a855f7);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(108, 60, 220, 0.25);
+      transition: box-shadow 0.2s;
+      padding: 0;
+    }
+
+    .profile-icon:hover {
+      box-shadow: 0 4px 14px rgba(108, 60, 220, 0.35);
+    }
+
+    .profile-dropdown {
+      display: none;
+      position: absolute;
+      top: 48px;
+      right: 0;
+      background: #fff;
+      border: 1px solid #e8e8ed;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      width: 220px;
+      z-index: 50;
+      overflow: hidden;
+    }
+
+    .profile-dropdown.visible {
+      display: block;
+    }
+
+    .profile-dropdown-header {
+      padding: 16px;
+      border-bottom: 1px solid #f0f0f2;
+    }
+
+    .profile-dropdown-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #1d1d1f;
+      margin-bottom: 2px;
+    }
+
+    .profile-dropdown-email {
+      font-size: 0.8rem;
+      color: #86868b;
+      word-break: break-all;
+    }
+
+    .profile-dropdown-item {
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: #424245;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+
+    .profile-dropdown-item:hover {
+      background: #f5f5f7;
+    }
+
+    .profile-dropdown-item.danger {
+      color: #dc2626;
+      border-top: 1px solid #f0f0f2;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6e6e73;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #d2d2d7;
+      background: #fff;
+      color: #1d1d1f;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    textarea:focus {
+      border-color: #6c3cdc;
+      box-shadow: 0 0 0 3px rgba(108, 60, 220, 0.1);
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .token-count {
+      font-size: 0.82rem;
+      color: #86868b;
+    }
+
+    .token-count span {
+      color: #6c3cdc;
+      font-weight: 600;
+    }
+
+    button {
+      padding: 12px 28px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6c3cdc, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(108, 60, 220, 0.25);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 14px rgba(108, 60, 220, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .results {
+      margin-top: 32px;
+      display: none;
+    }
+
+    .results.visible {
+      display: block;
+    }
+
+    .results-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #6c3cdc;
+    }
+
+    .scores-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .score-card {
+      background: #fff;
+      border: 1px solid #e8e8ed;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .score-card-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #86868b;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 8px;
+    }
+
+    .score-card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .score-bar {
+      height: 6px;
+      background: #f0f0f2;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    .feedback-section {
+      background: #fff;
+      border: 1px solid #e8e8ed;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .feedback-section h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1d1d1f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .icon-green { background: #dcfce7; color: #16a34a; }
+    .icon-orange { background: #ffedd5; color: #ea580c; }
+    .icon-blue { background: #dbeafe; color: #2563eb; }
+    .icon-purple { background: #f3e8ff; color: #7c3aed; }
+
+    .feedback-section ul {
+      padding-left: 20px;
+    }
+
+    .feedback-section li {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #424245;
+    }
+
+    .optimized-prompt {
+      background: #fff;
+      border: 1px solid #e8e8ed;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .optimized-prompt h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1d1d1f;
+    }
+
+    .optimized-prompt pre {
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #1d1d1f;
+      background: #f9fafb;
+      border: 1px solid #e8e8ed;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+    }
+
+    .copy-btn {
+      margin-top: 10px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      background: #e8e8ed;
+      color: #6e6e73;
+      border-radius: 6px;
+    }
+
+    .copy-btn:hover {
+      background: #d2d2d7;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    /* Auth Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border: 1px solid #e8e8ed;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+
+    .modal h2 {
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #6c3cdc, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .modal p {
+      color: #86868b;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #86868b;
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .modal-close:hover {
+      color: #1d1d1f;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #d2d2d7;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: #6c3cdc;
+      box-shadow: 0 0 0 3px rgba(108, 60, 220, 0.1);
+    }
+
+    .modal-btn {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .modal-error {
+      color: #dc2626;
+      font-size: 0.85rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .modal-toggle {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.85rem;
+      color: #86868b;
+    }
+
+    .modal-toggle a {
+      color: #6c3cdc;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .modal-toggle a:hover {
+      text-decoration: underline;
+    }
+
+    .score-color-red { color: #dc2626; }
+    .score-color-orange { color: #ea580c; }
+    .score-color-yellow { color: #ca8a04; }
+    .score-color-green { color: #16a34a; }
+
+    /* Profile Page */
+    .profile-page {
+      display: none;
+    }
+
+    .profile-page.visible {
+      display: block;
+    }
+
+    .profile-back {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      background: #e8e8ed;
+      color: #6e6e73;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 24px;
+    }
+
+    .profile-back:hover {
+      background: #d2d2d7;
+    }
+
+    .profile-card {
+      background: #fff;
+      border: 1px solid #e8e8ed;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      text-align: center;
+    }
+
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6c3cdc, #a855f7);
+      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 4px 14px rgba(108, 60, 220, 0.25);
+    }
+
+    .profile-card h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1d1d1f;
+      margin-bottom: 4px;
+    }
+
+    .profile-card .profile-email-text {
+      font-size: 0.9rem;
+      color: #86868b;
+      margin-bottom: 24px;
+    }
+
+    .profile-info {
+      text-align: left;
+      border-top: 1px solid #f0f0f2;
+      padding-top: 20px;
+    }
+
+    .profile-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid #f0f0f2;
+    }
+
+    .profile-info-row:last-child {
+      border-bottom: none;
+    }
+
+    .profile-info-label {
+      color: #86868b;
+      font-weight: 500;
+    }
+
+    .profile-info-value {
+      color: #1d1d1f;
+      font-weight: 600;
+    }
+
+    .profile-logout-btn {
+      margin-top: 24px;
+      padding: 10px 24px;
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .profile-logout-btn:hover {
+      background: #fee2e2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Main Page -->
+    <div id="mainPage">
+      <div class="header-row">
+        <div>
+          <h1>Prompt Analyzer</h1>
+          <p class="subtitle">Get AI feedback to write clearer, more efficient prompts</p>
+        </div>
+        <div class="profile-wrapper" id="profileWrapper">
+          <button class="profile-icon" id="profileIcon" onclick="toggleDropdown()"></button>
+          <div class="profile-dropdown" id="profileDropdown">
+            <div class="profile-dropdown-header">
+              <div class="profile-dropdown-name" id="dropdownName"></div>
+              <div class="profile-dropdown-email" id="dropdownEmail"></div>
+            </div>
+            <div class="profile-dropdown-item" onclick="showProfile()">My Profile</div>
+            <div class="profile-dropdown-item danger" onclick="logout()">Log out</div>
+          </div>
+        </div>
+      </div>
+
+      <label for="promptInput">Your Prompt</label>
+      <textarea id="promptInput" placeholder="Paste or type the prompt you want to analyze..."></textarea>
+
+      <div class="meta-row">
+        <div class="token-count">~<span id="tokenEst">0</span> tokens (estimated)</div>
+        <button class="btn-primary" id="analyzeBtn" onclick="analyze()">Analyze Prompt</button>
+      </div>
+
+      <div id="error" class="error" style="display:none;"></div>
+
+      <div id="results" class="results">
+        <div class="results-header">Analysis Results</div>
+
+        <div class="scores-grid">
+          <div class="score-card">
+            <div class="score-card-label">Clarity</div>
+            <div class="score-card-value" id="clarityScore">0</div>
+            <div class="score-bar"><div class="score-fill" id="clarityFill" style="width:0%;background:#6c3cdc;"></div></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Specificity</div>
+            <div class="score-card-value" id="specificityScore">0</div>
+            <div class="score-bar"><div class="score-fill" id="specificityFill" style="width:0%;background:#a855f7;"></div></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Token Efficiency</div>
+            <div class="score-card-value" id="efficiencyScore">0</div>
+            <div class="score-bar"><div class="score-fill" id="efficiencyFill" style="width:0%;background:#8b5cf6;"></div></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Structure</div>
+            <div class="score-card-value" id="structureScore">0</div>
+            <div class="score-bar"><div class="score-fill" id="structureFill" style="width:0%;background:#7c3aed;"></div></div>
+          </div>
+        </div>
+
+        <div class="feedback-section">
+          <h3><span class="section-icon icon-green">+</span> Strengths</h3>
+          <ul id="strengths"></ul>
+        </div>
+
+        <div class="feedback-section">
+          <h3><span class="section-icon icon-orange">!</span> Improvements</h3>
+          <ul id="improvements"></ul>
+        </div>
+
+        <div class="feedback-section">
+          <h3><span class="section-icon icon-blue">?</span> Missing Context</h3>
+          <p style="font-size:0.85rem;color:#86868b;margin-bottom:10px;">Details you should add to help the AI understand your requirements better</p>
+          <ul id="missingContext"></ul>
+        </div>
+
+        <div class="feedback-section">
+          <h3><span class="section-icon icon-purple">Q</span> Questions to Consider</h3>
+          <p style="font-size:0.85rem;color:#86868b;margin-bottom:10px;">Answer these before submitting to get a much better response</p>
+          <ul id="questions"></ul>
+        </div>
+
+        <div class="optimized-prompt">
+          <h3>Optimized Version</h3>
+          <pre id="optimizedText"></pre>
+          <button class="copy-btn" onclick="copyOptimized()">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Page -->
+    <div id="profilePage" class="profile-page">
+      <button class="profile-back" onclick="hideProfile()">Back</button>
+      <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar"></div>
+        <h2 id="profileName"></h2>
+        <p class="profile-email-text" id="profileEmail"></p>
+        <div class="profile-info">
+          <div class="profile-info-row">
+            <span class="profile-info-label">Email</span>
+            <span class="profile-info-value" id="profileInfoEmail"></span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-label">Member since</span>
+            <span class="profile-info-value" id="profileJoined"></span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-label">Prompts analyzed</span>
+            <span class="profile-info-value" id="profileCount"></span>
+          </div>
+        </div>
+        <button class="profile-logout-btn" onclick="logout()">Log out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2 id="modalTitle">Create Account</h2>
+      <p id="modalSubtitle">Sign up to get your prompt analysis</p>
+
+      <div class="form-group">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" placeholder="Min 6 characters" />
+      </div>
+
+      <button class="btn-primary modal-btn" id="authSubmitBtn" onclick="submitAuth()">Sign Up</button>
+      <div class="modal-error" id="authError"></div>
+
+      <div class="modal-toggle">
+        <span id="toggleText">Already have an account? </span>
+        <a id="toggleLink" onclick="toggleAuthMode()">Log in</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem('token');
+    let userEmail = localStorage.getItem('email');
+    let isSignup = true;
+    let pendingAnalysis = false;
+    let analyzeCount = parseInt(localStorage.getItem('analyzeCount') || '0');
+
+    function getInitials(email) {
+      return email ? email.charAt(0).toUpperCase() : '?';
+    }
+
+    function updateUI() {
+      const wrapper = document.getElementById('profileWrapper');
+      if (authToken && userEmail) {
+        wrapper.style.display = 'block';
+        document.getElementById('profileIcon').textContent = getInitials(userEmail);
+        document.getElementById('dropdownName').textContent = userEmail.split('@')[0];
+        document.getElementById('dropdownEmail').textContent = userEmail;
+      } else {
+        wrapper.style.display = 'none';
+      }
+    }
+    updateUI();
+
+    const promptInput = document.getElementById('promptInput');
+    const tokenEst = document.getElementById('tokenEst');
+
+    promptInput.addEventListener('input', () => {
+      const text = promptInput.value.trim();
+      tokenEst.textContent = text.length ? Math.ceil(text.length / 4) : 0;
+    });
+
+    // Dropdown
+    function toggleDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('visible');
+    }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('profileDropdown');
+      const icon = document.getElementById('profileIcon');
+      if (!dropdown.contains(e.target) && e.target !== icon) {
+        dropdown.classList.remove('visible');
+      }
+    });
+
+    // Profile page
+    function showProfile() {
+      document.getElementById('profileDropdown').classList.remove('visible');
+      document.getElementById('mainPage').style.display = 'none';
+      document.getElementById('profilePage').classList.add('visible');
+
+      document.getElementById('profileAvatar').textContent = getInitials(userEmail);
+      document.getElementById('profileName').textContent = userEmail.split('@')[0];
+      document.getElementById('profileEmail').textContent = userEmail;
+      document.getElementById('profileInfoEmail').textContent = userEmail;
+      document.getElementById('profileJoined').textContent = localStorage.getItem('joinedDate') || 'Today';
+      document.getElementById('profileCount').textContent = analyzeCount;
+    }
+
+    function hideProfile() {
+      document.getElementById('profilePage').classList.remove('visible');
+      document.getElementById('mainPage').style.display = 'block';
+    }
+
+    // Auth modal
+    function showModal() {
+      document.getElementById('authModal').classList.add('visible');
+      document.getElementById('authEmail').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('authModal').classList.remove('visible');
+      document.getElementById('authError').style.display = 'none';
+      pendingAnalysis = false;
+    }
+
+    function toggleAuthMode() {
+      isSignup = !isSignup;
+      document.getElementById('modalTitle').textContent = isSignup ? 'Create Account' : 'Welcome Back';
+      document.getElementById('modalSubtitle').textContent = isSignup
+        ? 'Sign up to get your prompt analysis'
+        : 'Log in to get your prompt analysis';
+      document.getElementById('authSubmitBtn').textContent = isSignup ? 'Sign Up' : 'Log In';
+      document.getElementById('toggleText').textContent = isSignup
+        ? 'Already have an account? '
+        : "Don't have an account? ";
+      document.getElementById('toggleLink').textContent = isSignup ? 'Log in' : 'Sign up';
+      document.getElementById('authError').style.display = 'none';
+    }
+
+    async function submitAuth() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const errorEl = document.getElementById('authError');
+      const btn = document.getElementById('authSubmitBtn');
+
+      errorEl.style.display = 'none';
+
+      if (!email || !password) {
+        errorEl.textContent = 'Please fill in all fields.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>' + (isSignup ? 'Signing up...' : 'Logging in...');
+
+      try {
+        const endpoint = isSignup ? '/api/signup' : '/api/login';
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Something went wrong');
+        }
+
+        authToken = data.token;
+        userEmail = data.email;
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('email', userEmail);
+        if (isSignup) {
+          localStorage.setItem('joinedDate', new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+        }
+        updateUI();
+        closeModal();
+
+        if (pendingAnalysis) {
+          pendingAnalysis = false;
+          analyze();
+        }
+      } catch (e) {
+        errorEl.textContent = e.message;
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = isSignup ? 'Sign Up' : 'Log In';
+      }
+    }
+
+    document.getElementById('authPassword').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitAuth();
+    });
+
+    function logout() {
+      authToken = null;
+      userEmail = null;
+      localStorage.removeItem('token');
+      localStorage.removeItem('email');
+      updateUI();
+      hideProfile();
+      document.getElementById('profileDropdown').classList.remove('visible');
+    }
+
+    function scoreColor(score) {
+      if (score >= 80) return 'score-color-green';
+      if (score >= 60) return 'score-color-yellow';
+      if (score >= 40) return 'score-color-orange';
+      return 'score-color-red';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function analyze() {
+      const prompt = promptInput.value.trim();
+      const btn = document.getElementById('analyzeBtn');
+      const errorEl = document.getElementById('error');
+      const resultsEl = document.getElementById('results');
+
+      errorEl.style.display = 'none';
+      resultsEl.classList.remove('visible');
+
+      if (!prompt) {
+        errorEl.textContent = 'Please enter a prompt to analyze.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (!authToken) {
+        pendingAnalysis = true;
+        showModal();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Analyzing...';
+
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({ prompt })
+        });
+
+        const result = await response.json();
+
+        if (response.status === 401) {
+          authToken = null;
+          localStorage.removeItem('token');
+          updateUI();
+          pendingAnalysis = true;
+          showModal();
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Server error');
+        }
+
+        // Track usage
+        analyzeCount++;
+        localStorage.setItem('analyzeCount', analyzeCount);
+
+        // Scores
+        const scores = [
+          { id: 'clarity', value: result.clarity },
+          { id: 'specificity', value: result.specificity },
+          { id: 'efficiency', value: result.efficiency },
+          { id: 'structure', value: result.structure }
+        ];
+
+        scores.forEach(({ id, value }) => {
+          const scoreEl = document.getElementById(id + 'Score');
+          scoreEl.textContent = value + '/100';
+          scoreEl.className = 'score-card-value ' + scoreColor(value);
+          document.getElementById(id + 'Fill').style.width = value + '%';
+        });
+
+        // Lists
+        document.getElementById('strengths').innerHTML = result.strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+        document.getElementById('improvements').innerHTML = result.improvements.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+        document.getElementById('missingContext').innerHTML = result.missing_context.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+        document.getElementById('questions').innerHTML = result.questions.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+
+        document.getElementById('optimizedText').textContent = result.optimized;
+
+        resultsEl.classList.add('visible');
+      } catch (e) {
+        errorEl.textContent = e.message;
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Analyze Prompt';
+      }
+    }
+
+    function copyOptimized() {
+      const text = document.getElementById('optimizedText').textContent;
+      navigator.clipboard.writeText(text);
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+  </script>
+</body>
+</html>
